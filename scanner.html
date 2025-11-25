@@ -6,31 +6,29 @@
   <title>فاحص رمز QR</title>
   <!-- مكتبة jsQR -->
   <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
-  <!-- مكتبة html5-qrcode -->
-  <script src="https://unpkg.com/html5-qrcode/minified/html5-qrcode.min.js"></script>
+  <!-- مكتبة html5-qrcode الصحيحة -->
+  <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
   <!-- أيقونات -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
   <style>
     body {
       font-family:"Segoe UI",Arial;
       background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-      color:#eee; margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh;
+      color:#eee; margin:0; display:flex; flex-direction:column;
+      justify-content:center; align-items:center; min-height:100vh;
     }
     .card {
       background:#1c1f26; border-radius:16px; padding:25px; width:90%; max-width:500px;
       box-shadow:0 8px 24px rgba(0,0,0,0.4); text-align:center;
-      animation:slideUp 1s ease forwards; opacity:0;
     }
-    h1 { color:#26c6da; animation:fadeIn 1.2s ease forwards; opacity:0; }
-    p  { color:#bbb; animation:fadeIn 1.5s ease forwards; opacity:0; }
+    h1 { color:#26c6da; }
+    p  { color:#bbb; }
 
     .btn {
       margin-top:12px; padding:10px 15px; border:none; border-radius:8px;
       font-weight:bold; cursor:pointer; transition:.3s; display:inline-flex; align-items:center; gap:8px;
-      animation:fadeIn 2s ease forwards; opacity:0;
     }
     .btn-primary { background:linear-gradient(135deg,#26c6da,#00acc1); color:#111; }
-    .btn-secondary { background:#2a2f3a; color:#eee; }
     .btn:hover { transform:scale(1.05); box-shadow:0 4px 12px rgba(0,0,0,.3); }
 
     .file-input { display:none; }
@@ -38,9 +36,7 @@
       background:linear-gradient(135deg,#26c6da,#00acc1); color:#111;
       padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;
       display:inline-flex; align-items:center; gap:8px; transition:.3s;
-      animation:fadeIn 2s ease forwards; opacity:0;
     }
-    .file-label:hover { transform:scale(1.05); box-shadow:0 4px 12px rgba(0,0,0,.3); }
 
     #resultBox {
       margin-top:20px;
@@ -48,47 +44,28 @@
       border-radius:12px;
       padding:15px;
       text-align:center;
-      animation:fadeIn 1.5s ease forwards;
-      opacity:0;
     }
-    #resultBox h3 {
-      color:#26c6da;
-      margin-bottom:10px;
-    }
-    #qrResult {
-      color:#fff;
-      font-weight:bold;
-      font-size:16px;
-      animation:slideUp 1s ease forwards;
-      opacity:0;
-    }
-    #actionBtn {
-      margin-top:10px;
-      display:inline-block;
-      padding:8px 12px;
-      border-radius:8px;
-      font-weight:bold;
-      cursor:pointer;
-      background:linear-gradient(135deg,#26c6da,#00acc1);
-      color:#111;
-      text-decoration:none;
-      transition:.3s;
-      animation:fadeIn 2s ease forwards;
-      opacity:0;
-    }
-    #actionBtn:hover { transform:scale(1.05); box-shadow:0 4px 12px rgba(0,0,0,.3); }
+    #resultBox h3 { color:#26c6da; margin-bottom:10px; }
+    #qrResult { color:#fff; font-weight:bold; font-size:16px; word-break: break-word; }
 
-    #reader { margin-top:15px; animation:fadeIn 2s ease forwards; opacity:0; }
+    #reader {
+      margin-top:15px;
+      width:320px;
+      height:320px;
+      background:#111; border-radius:12px; overflow:hidden;
+    }
+    #reader video { width:100% !important; height:100% !important; object-fit:cover; }
 
     .btn-back {
       display:inline-block; margin-top:20px; background:#26c6da; color:#111;
       padding:8px 12px; border-radius:8px; text-decoration:none; font-weight:bold;
-      transition:.3s; animation:fadeIn 2s ease forwards; opacity:0;
     }
     .btn-back:hover { background:#00acc1; }
 
-    @keyframes fadeIn { to{opacity:1;} }
-    @keyframes slideUp { from{transform:translateY(50px);opacity:0;} to{transform:translateY(0);opacity:1;} }
+    footer {
+      margin-top:25px; padding:10px; text-align:center;
+      color:#aaa; font-size:14px;
+    }
   </style>
 </head>
 <body>
@@ -99,7 +76,7 @@
     <input type="file" id="qrFile" class="file-input" accept="image/*">
     <label for="qrFile" class="file-label"><i class="fa-solid fa-image"></i> رفع صورة QR</label>
 
-    <button id="startCam" class="btn btn-primary"><i class="fa-solid fa-camera"></i> تشغيل الكاميرا</button>
+    <button id="toggleCam" class="btn btn-primary"><i class="fa-solid fa-camera"></i> تشغيل الكاميرا</button>
 
     <div id="resultBox">
       <h3>📌 نتيجة الفحص:</h3>
@@ -112,45 +89,52 @@
     <a href="index.html" class="btn-back"><i class="fa-solid fa-arrow-left"></i> رجوع للمولد</a>
   </div>
 
+  <footer>
+    جميع الحقوق محفوظة © محمد فيصل
+  </footer>
+
   <script>
+    let html5QrCode = null;
+    let camActive = false;
+    let camBusy = false; // يمنع الضغط المزدوج
+
     function showResult(text, success=true) {
       const result = document.getElementById("qrResult");
       const actionContainer = document.getElementById("actionContainer");
       result.innerText = text;
       result.style.color = success ? "#4caf50" : "#f44336";
-      result.style.opacity = "0";
-      result.style.animation = "none";
-      void result.offsetWidth;
-      result.style.animation = "slideUp 1s ease forwards";
-      result.style.opacity = "1";
-
-      // تنظيف الأزرار السابقة
       actionContainer.innerHTML = "";
 
       if(success){
-        if(/^https?:\/\//.test(text.replace("المحتوى: ",""))) {
-          // لو رابط
-          const link = text.replace("المحتوى: ","");
+        const pureText = text.replace(/^المحتوى:\s*/,"");
+        const isUrl = /^https?:\/\//i.test(pureText);
+        if (isUrl) {
           const visitBtn = document.createElement("a");
           visitBtn.id = "actionBtn";
-          visitBtn.href = link;
+          visitBtn.href = pureText;
           visitBtn.target = "_blank";
+          visitBtn.rel = "noopener";
           visitBtn.innerHTML = '<i class="fa-solid fa-link"></i> زيارة الرابط';
           actionContainer.appendChild(visitBtn);
         } else {
-          // لو نص عادي
           const copyBtn = document.createElement("button");
           copyBtn.id = "actionBtn";
           copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> نسخ النص';
-          copyBtn.onclick = () => {
-            navigator.clipboard.writeText(text.replace("المحتوى: ",""));
-            copyBtn.innerHTML = "✅ تم النسخ";
+          copyBtn.onclick = async () => {
+            try {
+              await navigator.clipboard.writeText(pureText);
+              copyBtn.innerHTML = "✅ تم النسخ";
+              setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> نسخ النص', 1200);
+            } catch {
+              alert("انسخ يدويًا: " + pureText);
+            }
           };
           actionContainer.appendChild(copyBtn);
         }
       }
     }
 
+    // فحص صورة ثابتة
     document.getElementById("qrFile").addEventListener("change", function(e) {
       const file = e.target.files[0];
       if (!file) return;
@@ -161,32 +145,51 @@
         img.onload = function() {
           const canvas = document.createElement("canvas");
           const ctx = canvas.getContext("2d");
-          canvas.width = img.width;
-          canvas.height = img.height;
+          canvas.width = img.width; canvas.height = img.height;
           ctx.drawImage(img, 0, 0);
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const code = jsQR(imageData.data, canvas.width, canvas.height);
-          if (code) {
-            showResult("المحتوى: " + code.data, true);
-          } else {
-            showResult("لم يتم التعرف على رمز QR", false);
-          }
+          if (code) showResult("المحتوى: " + code.data, true);
+          else showResult("لم يتم التعرف على رمز QR", false);
         };
       };
       reader.readAsDataURL(file);
     });
 
-    document.getElementById("startCam").addEventListener("click", () => {
-      const html5QrCode = new Html5Qrcode("reader");
-      html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: 250 },
-        qrCodeMessage => {
-          showResult("المحتوى: " + qrCodeMessage, true);
-          html5QrCode.stop();
-        },
-        errorMessage => { console.warn("خطأ:", errorMessage); }
-      ).catch(err => { showResult("تعذر فتح الكاميرا: " + err, false); });
+    // زر تشغيل/إيقاف الكاميرا
+    document.getElementById("toggleCam").addEventListener("click", async () => {
+      const btn = document.getElementById("toggleCam");
+
+      if (camBusy) return; // تجاهل الضغط أثناء الانتقال
+      camBusy = true;
+
+      if (!camActive) {
+        // تشغيل الكاميرا
+        if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+        try {
+          await html5QrCode.start(
+            { facingMode: "environment" },
+            { fps: 10, qrbox: 250 },
+            qrCodeMessage => {
+              showResult("المحتوى: " + qrCodeMessage, true);
+            }
+          );
+          camActive = true;
+          btn.innerHTML = '<i class="fa-solid fa-stop"></i> إيقاف تشغيل الكاميرا';
+        } catch (err) {
+          showResult("تعذر فتح الكاميرا: " + err, false);
+        }
+      } else {
+        // إيقاف الكاميرا
+        try {
+          await html5QrCode.stop();
+          await html5QrCode.clear();
+        } catch (e) { console.warn(e); }
+        camActive = false;
+        btn.innerHTML = '<i class="fa-solid fa-camera"></i> تشغيل الكاميرا';
+      }
+
+      camBusy = false; // فك القفل بعد انتهاء العملية
     });
   </script>
 </body>
