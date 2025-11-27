@@ -83,6 +83,8 @@
       .loading-bar { height:25px; font-size:14px; }
       input[type="text"],input[type="color"] { width:100%; }
     }
+
+    .ad-container { margin:20px 0; }
   </style>
 </head>
 <body>
@@ -109,16 +111,18 @@
       <button class="btn btn-secondary" id="clearBtn"><i class="fa-solid fa-trash"></i> مسح</button>
     </div>
 
-    <!-- إعلان AdSense يظهر هنا -->
-    <ins class="adsbygoogle"
-         style="display:block; margin:20px 0;"
-         data-ad-client="ca-pub-7744635661972873"
-         data-ad-slot="1234567890"
-         data-ad-format="auto"
-         data-full-width-responsive="true"></ins>
-    <script>
-         (adsbygoogle = window.adsbygoogle || []).push({});
-    </script>
+    <!-- إعلان AdSense -->
+    <div class="ad-container">
+      <ins class="adsbygoogle"
+           style="display:block;"
+           data-ad-client="ca-pub-7744635661972873"
+           data-ad-slot="1234567890" <!-- استبدل هذا بالرقم الحقيقي من AdSense -->
+           data-ad-format="auto"
+           data-full-width-responsive="true"></ins>
+      <script>
+           (adsbygoogle = window.adsbygoogle || []).push({});
+      </script>
+    </div>
 
     <div class="loading-bar" id="loadingBar">
       <div id="loadingFill"></div>
@@ -130,7 +134,11 @@
 
   <script>
     let qr = null;
-    function libraryReady() { return typeof QRCode !== "undefined" && QRCode; }
+
+    function libraryReady() {
+      return typeof QRCode !== "undefined" && QRCode;
+    }
+
     function enableUI() {
       const qrBox = document.getElementById("qrcode");
       qrBox.style.animation = "fadeInQR 1s ease forwards";
@@ -138,12 +146,19 @@
       document.getElementById("downloadBtn").disabled = false;
       document.getElementById("shareBtn").disabled = false;
     }
+
     function showWhenReady() {
       const qrBox = document.getElementById("qrcode");
       const canvas = qrBox.querySelector("canvas");
       const img = qrBox.querySelector("img");
+
       if (canvas) { enableUI(); return; }
-      if (img) { if (img.complete) { enableUI(); return; } img.onload = enableUI; return; }
+      if (img) {
+        if (img.complete) { enableUI(); return; }
+        img.onload = enableUI;
+        return;
+      }
+
       let tries = 0;
       const watch = setInterval(() => {
         const c = qrBox.querySelector("canvas");
@@ -152,9 +167,6 @@
         if (++tries > 40) clearInterval(watch);
       }, 50);
     }
+
     function generateQR() {
-      const text = document.getElementById("linkInput").value.trim();
-      const colorDark  = document.getElementById("colorDark").value;
-      const colorLight = document.getElementById("colorLight").value;
-      if (!text) { alert("من فضلك أدخل نص أو رابط"); return; }
-      if (!
+      const text = document.getElementById("link
