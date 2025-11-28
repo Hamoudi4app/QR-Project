@@ -5,27 +5,24 @@
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>مولد رمز QR متطور</title>
 
-  <!-- مكتبة QRCode (بديل موثوق) -->
+  <!-- مكتبة QRCode -->
   <script src="https://unpkg.com/qrcodejs@1.0.0/qrcode.min.js"></script>
 
   <!-- أيقونات -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
+  <!-- سكربت AdSense للإعلانات التلقائية (لا يحتاج ad-slot) -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-7744635661972873" crossorigin="anonymous"></script>
 
   <style>
     body {
       font-family: "Segoe UI", Arial;
       background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
       color:#eee; margin:0; display:flex; justify-content:center; align-items:center; min-height:100vh;
-      position:relative;
+      position:relative; flex-direction:column;
     }
-    /* زر الفحص أعلى يسار */
-    .top-left {
-      position: fixed; top: 15px; left: 15px; z-index: 999;
-    }
-    .btn-nav {
-      background:#26c6da; color:#111; padding:6px 10px; border-radius:8px; font-size:13px;
-      text-decoration:none; font-weight:bold; transition:.3s;
-    }
+    .top-left { position: fixed; top: 15px; left: 15px; z-index: 999; }
+    .btn-nav { background:#26c6da; color:#111; padding:6px 10px; border-radius:8px; font-size:13px; text-decoration:none; font-weight:bold; transition:.3s; }
     .btn-nav:hover { background:#00acc1; transform:scale(1.05); }
 
     .card {
@@ -54,7 +51,6 @@
 
     .actions { display:flex; flex-wrap:wrap; justify-content:center; margin-top:15px; }
 
-    /* خط التحميل */
     .loading-bar {
       width:100%; height:30px; background:#2a2f3a; border-radius:6px; overflow:hidden;
       margin-top:15px; display:none; position:relative; color:#fff; font-weight:bold;
@@ -67,18 +63,14 @@
     .loading-bar span { position:relative; z-index:1; }
     @keyframes loading { from{width:0%;} to{width:100%;} }
 
-    /* صندوق الرمز */
     #qrcode {
-      margin-top:20px; padding:20px; background:#fff; border-radius:12px; display:inline-block;
-      opacity:0;
+      margin-top:20px; padding:20px; background:#fff; border-radius:12px; display:inline-block; opacity:0;
     }
     @keyframes fadeInQR { from{opacity:0;} to{opacity:1;} }
 
-    /* Keyframes العامة */
     @keyframes fadeIn { to{opacity:1;} }
     @keyframes slideUp { from{transform:translateY(50px);opacity:0;} to{transform:translateY(0);opacity:1;} }
 
-    /* تجاوب الهاتف */
     @media (max-width: 600px) {
       .card { padding:20px; width:95%; }
       h1 { font-size:20px; }
@@ -126,9 +118,7 @@
   <script>
     let qr = null;
 
-    function libraryReady() {
-      return typeof QRCode !== "undefined" && QRCode;
-    }
+    function libraryReady() { return typeof QRCode !== "undefined" && QRCode; }
 
     function enableUI() {
       const qrBox = document.getElementById("qrcode");
@@ -150,7 +140,6 @@
         return;
       }
 
-      // انتظر ظهور ناتج المكتبة لو اتأخر لحظيًا
       let tries = 0;
       const watch = setInterval(() => {
         const c = qrBox.querySelector("canvas");
@@ -172,19 +161,16 @@
       const loadingBar = document.getElementById("loadingBar");
       const fill = document.getElementById("loadingFill");
 
-      // تهيئة
       qrBox.innerHTML = "";
       qrBox.style.opacity = "0";
       qrBox.style.animation = "none";
 
-      // شغّل خط التحميل
       loadingBar.style.display = "flex";
       fill.style.width = "0%";
       fill.style.animation = "none";
-      void fill.offsetWidth; // إعادة تشغيل الأنيميشن
+      void fill.offsetWidth;
       fill.style.animation = "loading 1200ms linear forwards";
 
-      // بعد انتهاء التحميل → توليد الرمز
       setTimeout(() => {
         try {
           qr = new QRCode(qrBox, {
@@ -254,7 +240,6 @@
       document.getElementById("shareBtn").disabled = true;
     }
 
-    // ربط الأزرار
     window.addEventListener("DOMContentLoaded", () => {
       document.getElementById("genBtn").addEventListener("click", generateQR);
       document.getElementById("downloadBtn").addEventListener("click", downloadQR);
