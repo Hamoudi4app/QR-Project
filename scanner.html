@@ -1,143 +1,220 @@
 <!DOCTYPE html>
-<html lang="ar">
+<html lang="ar" dir="rtl">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>فاحص رمز QR</title>
-  <!-- مكتبة jsQR -->
+  <title>فاحص رمز QR الذكي</title>
+  
   <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
-  <!-- مكتبة html5-qrcode الصحيحة -->
   <script src="https://unpkg.com/html5-qrcode/html5-qrcode.min.js"></script>
-  <!-- أيقونات -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+
   <style>
+    :root {
+      --primary-color: #26c6da;
+      --secondary-color: #00acc1;
+      --bg-gradient: linear-gradient(135deg, #0f2027, #203a43, #2c5364);
+      --card-bg: #1c1f26;
+      --text-main: #eee;
+    }
+
     body {
-      font-family:"Segoe UI",Arial;
-      background: linear-gradient(135deg,#0f2027,#203a43,#2c5364);
-      color:#eee; margin:0; display:flex; flex-direction:column;
-      justify-content:center; align-items:center; min-height:100vh;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: var(--bg-gradient);
+      color: var(--text-main);
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 20px;
     }
+
     .card {
-      background:#1c1f26; border-radius:16px; padding:25px; width:90%; max-width:500px;
-      box-shadow:0 8px 24px rgba(0,0,0,0.4); text-align:center;
+      background: var(--card-bg);
+      border-radius: 20px;
+      padding: 30px;
+      width: 100%;
+      max-width: 500px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+      text-align: center;
+      border: 1px solid rgba(255,255,255,0.1);
     }
-    h1 { color:#26c6da; }
-    p  { color:#bbb; }
+
+    h1 { color: var(--primary-color); margin-bottom: 10px; }
+    p { color: #bbb; margin-bottom: 25px; }
+
+    .controls {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      margin-bottom: 25px;
+    }
 
     .btn {
-      margin-top:12px; padding:10px 15px; border:none; border-radius:8px;
-      font-weight:bold; cursor:pointer; transition:.3s; display:inline-flex; align-items:center; gap:8px;
+      padding: 12px 20px;
+      border: none;
+      border-radius: 10px;
+      font-weight: bold;
+      cursor: pointer;
+      transition: 0.3s;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      font-size: 16px;
     }
-    .btn-primary { background:linear-gradient(135deg,#26c6da,#00acc1); color:#111; }
-    .btn:hover { transform:scale(1.05); box-shadow:0 4px 12px rgba(0,0,0,.3); }
 
-    .file-input { display:none; }
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+      color: #111;
+    }
+
     .file-label {
-      background:linear-gradient(135deg,#26c6da,#00acc1); color:#111;
-      padding:10px 15px; border-radius:8px; font-weight:bold; cursor:pointer;
-      display:inline-flex; align-items:center; gap:8px; transition:.3s;
+      background: rgba(255,255,255,0.1);
+      color: var(--text-main);
+      border: 1px dashed var(--primary-color);
+    }
+
+    .btn:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      filter: brightness(1.1);
+    }
+
+    #reader {
+      width: 100% !important;
+      border-radius: 15px;
+      overflow: hidden;
+      background: #000;
+      margin-top: 15px;
+      border: 2px solid var(--primary-color);
+      display: none; /* يظهر فقط عند تشغيل الكاميرا */
     }
 
     #resultBox {
-      margin-top:20px;
-      background:#2a2f3a;
-      border-radius:12px;
-      padding:15px;
-      text-align:center;
+      margin-top: 25px;
+      background: rgba(255,255,255,0.05);
+      border-radius: 15px;
+      padding: 20px;
+      border: 1px solid rgba(255,255,255,0.1);
     }
-    #resultBox h3 { color:#26c6da; margin-bottom:10px; }
-    #qrResult { color:#fff; font-weight:bold; font-size:16px; word-break: break-word; }
 
-    #reader {
-      margin-top:15px;
-      width:320px;
-      height:320px;
-      background:#111; border-radius:12px; overflow:hidden;
+    #qrResult {
+      word-break: break-all;
+      font-weight: bold;
+      margin: 10px 0;
+      display: block;
     }
-    #reader video { width:100% !important; height:100% !important; object-fit:cover; }
+
+    /* تنسيق زر الأكشن (زيارة الرابط أو النسخ) */
+    #actionBtn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+      padding: 10px 20px;
+      background: var(--primary-color);
+      color: #111;
+      text-decoration: none;
+      border-radius: 8px;
+      font-weight: bold;
+      border: none;
+      cursor: pointer;
+    }
 
     .btn-back {
-      display:inline-block; margin-top:20px; background:#26c6da; color:#111;
-      padding:8px 12px; border-radius:8px; text-decoration:none; font-weight:bold;
+      margin-top: 25px;
+      color: var(--primary-color);
+      text-decoration: none;
+      font-size: 14px;
+      display: inline-block;
     }
-    .btn-back:hover { background:#00acc1; }
+
+    .btn-back:hover { text-decoration: underline; }
 
     footer {
-      margin-top:25px; padding:10px; text-align:center;
-      color:#aaa; font-size:14px;
+      margin-top: auto;
+      padding: 20px;
+      font-size: 13px;
+      color: #777;
     }
   </style>
 </head>
 <body>
+
   <div class="card">
-    <h1>فاحص رمز QR</h1>
-    <p>اختر صورة أو استخدم الكاميرا لقراءة رمز QR:</p>
+    <h1><i class="fa-solid fa-qrcode"></i> ماسح QR</h1>
+    <p>قم بتوجيه الكاميرا نحو الرمز أو ارفع صورة</p>
 
-    <input type="file" id="qrFile" class="file-input" accept="image/*">
-    <label for="qrFile" class="file-label"><i class="fa-solid fa-image"></i> رفع صورة QR</label>
+    <div class="controls">
+      <button id="toggleCam" class="btn btn-primary">
+        <i class="fa-solid fa-camera"></i> تشغيل الكاميرا
+      </button>
 
-    <button id="toggleCam" class="btn btn-primary"><i class="fa-solid fa-camera"></i> تشغيل الكاميرا</button>
-
-    <div id="resultBox">
-      <h3>📌 نتيجة الفحص:</h3>
-      <p id="qrResult">لم يتم الفحص بعد</p>
-      <div id="actionContainer"></div>
+      <input type="file" id="qrFile" style="display:none" accept="image/*">
+      <label for="qrFile" class="btn file-label">
+        <i class="fa-solid fa-file-import"></i> اختيار صورة من الجهاز
+      </label>
     </div>
 
     <div id="reader"></div>
 
-    <a href="index.html" class="btn-back"><i class="fa-solid fa-arrow-left"></i> رجوع للمولد</a>
+    <div id="resultBox">
+      <span style="color: var(--primary-color);">النتيجة:</span>
+      <div id="qrResult">في انتظار المسح...</div>
+      <div id="actionContainer"></div>
+    </div>
+
+    <a href="index.html" class="btn-back"><i class="fa-solid fa-arrow-right"></i> العودة للمولد</a>
   </div>
 
-  <footer>
-    جميع الحقوق محفوظة © محمد فيصل
-  </footer>
+  <footer>جميع الحقوق محفوظة © محمد فيصل</footer>
 
   <script>
     let html5QrCode = null;
     let camActive = false;
-    let camBusy = false; // يمنع الضغط المزدوج
 
-    function showResult(text, success=true) {
-      const result = document.getElementById("qrResult");
+    // دالة عرض النتائج وتجهيز زر الأكشن
+    function handleResult(decodedText) {
+      const resultElement = document.getElementById("qrResult");
       const actionContainer = document.getElementById("actionContainer");
-      result.innerText = text;
-      result.style.color = success ? "#4caf50" : "#f44336";
+      
+      resultElement.innerText = decodedText;
+      resultElement.style.color = "#4caf50";
       actionContainer.innerHTML = "";
 
-      if(success){
-        const pureText = text.replace(/^المحتوى:\s*/,"");
-        const isUrl = /^https?:\/\//i.test(pureText);
-        if (isUrl) {
-          const visitBtn = document.createElement("a");
-          visitBtn.id = "actionBtn";
-          visitBtn.href = pureText;
-          visitBtn.target = "_blank";
-          visitBtn.rel = "noopener";
-          visitBtn.innerHTML = '<i class="fa-solid fa-link"></i> زيارة الرابط';
-          actionContainer.appendChild(visitBtn);
-        } else {
-          const copyBtn = document.createElement("button");
-          copyBtn.id = "actionBtn";
-          copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> نسخ النص';
-          copyBtn.onclick = async () => {
-            try {
-              await navigator.clipboard.writeText(pureText);
-              copyBtn.innerHTML = "✅ تم النسخ";
-              setTimeout(()=> copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> نسخ النص', 1200);
-            } catch {
-              alert("انسخ يدويًا: " + pureText);
-            }
-          };
-          actionContainer.appendChild(copyBtn);
-        }
+      // التحقق إذا كان المحتوى رابطاً
+      const isUrl = /^(http|https):\/\/[^ "]+$/.test(decodedText.trim());
+
+      if (isUrl) {
+        const link = document.createElement("a");
+        link.href = decodedText.trim();
+        link.target = "_blank";
+        link.id = "actionBtn";
+        link.innerHTML = '<i class="fa-solid fa-external-link"></i> زيارة الرابط';
+        actionContainer.appendChild(link);
+      } else {
+        const copyBtn = document.createElement("button");
+        copyBtn.id = "actionBtn";
+        copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> نسخ النص';
+        copyBtn.onclick = () => {
+          navigator.clipboard.writeText(decodedText);
+          copyBtn.innerHTML = '<i class="fa-solid fa-check"></i> تم النسخ!';
+          setTimeout(() => copyBtn.innerHTML = '<i class="fa-solid fa-copy"></i> نسخ النص', 2000);
+        };
+        actionContainer.appendChild(copyBtn);
       }
+
+      // اهتزاز بسيط للهواتف عند النجاح
+      if (navigator.vibrate) navigator.vibrate(100);
     }
 
-    // فحص صورة ثابتة
-    document.getElementById("qrFile").addEventListener("change", function(e) {
+    // معالجة رفع الصور
+    document.getElementById("qrFile").addEventListener("change", e => {
       const file = e.target.files[0];
       if (!file) return;
+
       const reader = new FileReader();
       reader.onload = function() {
         const img = new Image();
@@ -149,48 +226,58 @@
           ctx.drawImage(img, 0, 0);
           const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
           const code = jsQR(imageData.data, canvas.width, canvas.height);
-          if (code) showResult("المحتوى: " + code.data, true);
-          else showResult("لم يتم التعرف على رمز QR", false);
+          
+          if (code) {
+            handleResult(code.data);
+          } else {
+            document.getElementById("qrResult").innerText = "تعذر العثور على رمز في هذه الصورة";
+            document.getElementById("qrResult").style.color = "#f44336";
+          }
         };
       };
       reader.readAsDataURL(file);
     });
 
-    // زر تشغيل/إيقاف الكاميرا
+    // تشغيل/إيقاف الكاميرا
     document.getElementById("toggleCam").addEventListener("click", async () => {
       const btn = document.getElementById("toggleCam");
-
-      if (camBusy) return; // تجاهل الضغط أثناء الانتقال
-      camBusy = true;
+      const readerDiv = document.getElementById("reader");
 
       if (!camActive) {
-        // تشغيل الكاميرا
         if (!html5QrCode) html5QrCode = new Html5Qrcode("reader");
+        readerDiv.style.display = "block";
+        
         try {
           await html5QrCode.start(
             { facingMode: "environment" },
-            { fps: 10, qrbox: 250 },
-            qrCodeMessage => {
-              showResult("المحتوى: " + qrCodeMessage, true);
+            { fps: 10, qrbox: { width: 250, height: 250 } },
+            (text) => {
+              handleResult(text);
+              // اختياري: إيقاف الكاميرا تلقائياً بعد أول مسح ناجح
+              // stopCamera(); 
             }
           );
           camActive = true;
-          btn.innerHTML = '<i class="fa-solid fa-stop"></i> إيقاف تشغيل الكاميرا';
+          btn.innerHTML = '<i class="fa-solid fa-stop"></i> إيقاف الكاميرا';
+          btn.style.background = "#f44336";
         } catch (err) {
-          showResult("تعذر فتح الكاميرا: " + err, false);
+          alert("خطأ في الوصول للكاميرا: " + err);
         }
       } else {
-        // إيقاف الكاميرا
-        try {
-          await html5QrCode.stop();
-          await html5QrCode.clear();
-        } catch (e) { console.warn(e); }
-        camActive = false;
-        btn.innerHTML = '<i class="fa-solid fa-camera"></i> تشغيل الكاميرا';
+        stopCamera();
       }
-
-      camBusy = false; // فك القفل بعد انتهاء العملية
     });
+
+    async function stopCamera() {
+      if (html5QrCode) {
+        await html5QrCode.stop();
+        document.getElementById("reader").style.display = "none";
+        const btn = document.getElementById("toggleCam");
+        btn.innerHTML = '<i class="fa-solid fa-camera"></i> تشغيل الكاميرا';
+        btn.style.background = "linear-gradient(135deg, var(--primary-color), var(--secondary-color))";
+        camActive = false;
+      }
+    }
   </script>
 </body>
 </html>
